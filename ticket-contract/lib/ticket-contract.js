@@ -5,6 +5,7 @@
 "use strict";
 
 const { Contract } = require("fabric-contract-api");
+const { event } = require("./event");
 
 class TicketContract extends Contract {
     async ticketExists(ctx, ticketId) {
@@ -23,8 +24,9 @@ class TicketContract extends Contract {
         const newOwner = value;
 
         value = {
-            time: Date.now(),
+            issueTimeStamp: new Date.toISOString(),
             owner: newOwner,
+            event,
         };
 
         const asset = { value };
@@ -48,12 +50,12 @@ class TicketContract extends Contract {
             throw new Error(`The ticket ${ticketId} does not exist`);
         }
 
-        const newValue = {
-            time: Date.now(),
-            owner: newOwner,
-        };
+        const ticket = ctx.stub.getState(ticketId);
 
-        const asset = { value: newValue };
+        ticket.transferTimeStamp = new Date.toISOString();
+        ticket.newOwner = newOwner;
+
+        const asset = { value: ticket };
         const buffer = Buffer.from(JSON.stringify(asset));
         await ctx.stub.putState(ticketId, buffer);
     }
